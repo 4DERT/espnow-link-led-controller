@@ -31,6 +31,8 @@ mode_e specify_mode() {
 bool mode_init() {
   gpio_set_direction(CONFIG_GPIO_JUMPER_C1, GPIO_MODE_INPUT);
   gpio_set_direction(CONFIG_GPIO_JUMPER_C2, GPIO_MODE_INPUT);
+  gpio_pullup_en(CONFIG_GPIO_JUMPER_C1);
+  gpio_pullup_en(CONFIG_GPIO_JUMPER_C2);
   mode = specify_mode();
 
   ESP_LOGI(TAG, "The LED controller is configured in mode: %d", mode);

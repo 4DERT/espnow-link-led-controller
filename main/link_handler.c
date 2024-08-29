@@ -29,7 +29,7 @@ link_config_t link_config_all_channels = {
 
 link_config_t link_config_individual_channels = {
     .type = 4,
-    .commands = {"ON=*", "OFF=*", "SET_BRIGHTNESS=*,*", "GET_STATUS"},
+    .commands = {"ON=*", "OFF=*", "SET_BRIGHTNESS=*", "GET_STATUS"},
     .status_fmt = "[{\"state\":\"%s\",\"brightness\":%u},{\"state\":\"%s\","
                   "\"brightness\":%u},{\"state\":\"%s\",\"brightness\":%u},{"
                   "\"state\":\"%s\",\"brightness\":%u}]",
@@ -39,8 +39,7 @@ link_config_t link_config_individual_channels = {
 
 link_config_t link_config_rgb = {
     .type = 5,
-    .commands = {"ON", "OFF", "SET_BRIGHTNESS=*", "GET_STATUS",
-                 "SET_RGB=*,*,*"},
+    .commands = {"ON", "OFF", "SET_BRIGHTNESS=*", "GET_STATUS", "SET_RGB=*"},
     .status_fmt = "{\"state\":\"%s\",\"rgb\":[%u,%u,%u], \"brightness\": %u}",
     .user_command_parser_cb = on_link_command_rgb_channels,
     .user_status_msg_cb = on_link_status_message_create_rgb,
@@ -85,10 +84,8 @@ void on_link_command_all_channels(const char *cmd) {
   else if (strncmp(cmd, "SET_BRIGHTNESS=", 15) == 0) {
     const char *value_str = cmd + 15;
     int value = atoi(value_str);
-
-    if (value > 0 && value <= 100) {
-      lc_set_brightness(LC_CH_ALL, value);
-    }
+    lc_set_brightness(LC_CH_ALL, value);
+    lc_on(LC_CH_ALL);
   }
 
   else if (strcmp(cmd, "GET_STATUS") == 0) {
@@ -109,7 +106,7 @@ void on_link_command_individual_channels(const char *cmd) {
   else if (strncmp(cmd, "OFF=", 4) == 0) {
     const char *value_str = cmd + 4;
     int value = atoi(value_str);
-    lc_on(value);
+    lc_off(value);
   }
 
   else if (strncmp(cmd, "SET_BRIGHTNESS=", 15) == 0) {
@@ -117,11 +114,8 @@ void on_link_command_individual_channels(const char *cmd) {
     const char *value_str = cmd + 15;
 
     if (sscanf(value_str, "%d,%d", &channel, &brightness) == 2) {
-      if (channel >= 0 && channel <= 3 && brightness > 0 && brightness <= 100) {
-        lc_set_brightness(channel, brightness);
-      } else {
-        ESP_LOGW(TAG, "Invalid channel or brightness value.");
-      }
+      lc_set_brightness(channel, brightness);
+      lc_on(channel);
     } else {
       ESP_LOGW(TAG, "Invalid command format.");
     }
@@ -172,13 +166,29 @@ void on_link_command_rgb_channels(const char *cmd) {
 }
 
 char *on_link_status_message_create_all_channels(void) {
-  char *msg = strdup("OK");
-  return msg;
+  const lc_channel_t *lc_channel_arr = lc_get_status();
+
+  char *status = link_generate_status_message(
+      NULL, lc_channel_arr[LC_CH_0].is_on ? "ON" : "OFF",
+      lc_channel_arr[LC_CH_0].brightness);
+  return status;
 }
+
 char *on_link_status_message_create_individual_channels(void) {
-  char *msg = strdup("OK");
-  return msg;
+  const lc_channel_t *lc_channel_arr = lc_get_status();
+
+  char *status = link_generate_status_message(
+      NULL, lc_channel_arr[LC_CH_0].is_on ? "ON" : "OFF",
+      lc_channel_arr[LC_CH_0].brightness,
+      lc_channel_arr[LC_CH_1].is_on ? "ON" : "OFF",
+      lc_channel_arr[LC_CH_1].brightness,
+      lc_channel_arr[LC_CH_2].is_on ? "ON" : "OFF",
+      lc_channel_arr[LC_CH_2].brightness,
+      lc_channel_arr[LC_CH_3].is_on ? "ON" : "OFF",
+      lc_channel_arr[LC_CH_3].brightness);
+  return status;
 }
+
 char *on_link_status_message_create_rgb(void) {
   char *msg = strdup("OK");
   return msg;

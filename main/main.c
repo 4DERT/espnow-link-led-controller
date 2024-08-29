@@ -28,7 +28,7 @@ int app_main() {
           (is_mode_changed || true /*todo: check if button is pressed*/));
 
   while (1) {
-    ESP_LOGI(TAG, "Hello World!");
+    // ESP_LOGI(TAG, "Hello World!");
     vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }

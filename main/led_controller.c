@@ -27,12 +27,6 @@
 
 static const char *TAG = "LED_controller";
 
-typedef struct {
-  bool is_on;
-  uint8_t brightness;
-  uint32_t duty;
-} lc_channel_t;
-
 lc_channel_t lc_channel_helper[LEDC_CH_NUM];
 
 /*
@@ -192,3 +186,5 @@ void lc_set_brightness(lc_channel_e ch, uint8_t brightness) {
   ESP_LOGI(TAG, "Setting brightness of channel %d to %d%% (%lu)\n", ch,
            brightness, lc_channel_helper[ch].duty);
 }
+
+const lc_channel_t *lc_get_status() { return lc_channel_helper; }
