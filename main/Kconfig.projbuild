@@ -1,0 +1,43 @@
+menu "Pin Configuration"
+
+# LED Configuration
+menu "LEDs"
+
+config GPIO_LED_BUILTIN
+    int "ESP builtin LED GPIO number"
+    range 0 40
+    default 15
+    help
+        Set the builtin LED GPIO number.
+
+config GPIO_LED_BUILTIN_ACTIVE_STATE
+    int "Builtin LED active state (0 for low, 1 for high)"
+    range 0 1
+    default 1
+    help
+        Set the active state for the builtin LED. Use 0 for active low, 1 for active high.
+
+endmenu # End of LED Configuration
+
+
+# Buttons Configuration
+menu "Buttons"
+
+config GPIO_BUTTON_BUILTIN
+    int "ESP builtin button GPIO number"
+    range 0 40
+    default 0
+    help
+        Set the builtin button GPIO number.
+
+config GPIO_BUTTON_BUILTIN_ACTIVE_STATE
+    int "Builtin button active state (0 for low, 1 for high)"
+    range 0 1
+    default 0
+    help
+        Set the active state for the builtin button. Use 0 for active low, 1 for active high.
+        This setting also enables internal pull-up or pull-down resistors accordingly.
+
+endmenu # End of Buttons Configuration
+
+endmenu # End of Pin Configuration
