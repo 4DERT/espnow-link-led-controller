@@ -43,19 +43,34 @@ endmenu # End of Buttons Configuration
 # Config jumper Configuration
 menu "Jumpers"
 
-config GPIO_JUMPER_RGB
-    int "GPIO number for RGB jumper"
+config GPIO_JUMPER_C1
+    int "GPIO number for C1 jumper"
     range 0 40
-    default 3
+    default 5
     help
-        Specify the GPIO number assigned to the RGB jumper configuration.
+        Specify the GPIO number assigned to the C1 jumper.
 
-config GPIO_JUMPER_RGB_ACTIVE_STATE
-    int "Active state for RGB jumper (0 = low, 1 = high)"
+config GPIO_JUMPER_C1_ACTIVE_STATE
+    int "Active state for C1 jumper (0 = low, 1 = high)"
     range 0 1
     default 0
     help
-        Define the active state for the RGB jumper. Set 0 for active low or 1 for active high.
+        Define the active state for the C1 jumper. Set 0 for active low or 1 for active high.
+        This configuration also automatically enables the appropriate internal pull-up or pull-down resistors.
+
+config GPIO_JUMPER_C2
+    int "GPIO number for C2 jumper"
+    range 0 40
+    default 3
+    help
+        Specify the GPIO number assigned to the C2 jumper.
+
+config GPIO_JUMPER_C2_ACTIVE_STATE
+    int "Active state for C2 jumper (0 = low, 1 = high)"
+    range 0 1
+    default 0
+    help
+        Define the active state for the C2 jumper. Set 0 for active low or 1 for active high.
         This configuration also automatically enables the appropriate internal pull-up or pull-down resistors.
 
 endmenu # End of Jumper Configuration

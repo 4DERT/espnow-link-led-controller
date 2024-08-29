@@ -1,0 +1,8 @@
+## IDF Component Manager Manifest File
+dependencies:
+  ## Required IDF version
+  idf:
+    version: ">=4.1.0"
+
+  espnow-link-protocol:
+    git: https://github.com/4DERT/espnow-link-protocol
