@@ -11,15 +11,17 @@
 #include "nvs_flash.h"
 
 #include "mode.h"
+#include "nvs_manager.h"
+#include "link_handler.h"
 
 static const char *TAG = "main";
 
-static void init_nvs(void);
-
 int app_main() {
-  init_nvs();
+  nvsm_init();
 
-  mode_init();
+  bool is_mode_changed = mode_init();
+  mode_e current_mode = mode_get();
+  lh_init(current_mode, (is_mode_changed || true /*todo: check if button is pressed*/));
 
   while (1) {
     ESP_LOGI(TAG, "Hello World!");
@@ -27,12 +29,3 @@ int app_main() {
   }
 }
 
-void init_nvs(void) {
-  esp_err_t ret = nvs_flash_init();
-  if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
-      ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-    ESP_ERROR_CHECK(nvs_flash_erase());
-    ret = nvs_flash_init();
-  }
-  ESP_ERROR_CHECK(ret);
-}
