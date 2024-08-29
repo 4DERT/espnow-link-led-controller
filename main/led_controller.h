@@ -3,9 +3,11 @@
 
 #include <stdint.h>
 
+#include "driver/ledc.h"
+
 #define LC_DUTY_RESOLUTION LEDC_TIMER_13_BIT
 #define LC_MIN_DUTY 0
-#define LC_MAX_DUTY (1 << LEDC_TIMER_13_BIT)
+#define LC_MAX_DUTY (1 << LC_DUTY_RESOLUTION)
 #define LC_MIN_BRIGHTNESS 1
 #define LC_MAX_BRIGHTNESS 100
 
