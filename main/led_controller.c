@@ -17,9 +17,9 @@
 #define LEDC_LS_CH3_CHANNEL LEDC_CHANNEL_3
 
 #define LEDC_CH_NUM (4)
-#define LEDC_DUTY_RESOLUTION LEDC_TIMER_13_BIT
-#define LEDC_MIN_DUTY 0
-#define LEDC_MAX_DUTY (1 << LEDC_TIMER_13_BIT)
+#define LEDC_DUTY_RESOLUTION LC_DUTY_RESOLUTION
+#define LEDC_MIN_DUTY LC_MIN_DUTY
+#define LEDC_MAX_DUTY LC_MAX_DUTY
 #define LEDC_FADE_TIME CONFIG_LEDC_FADE_TIME_MS
 
 #define MAP_BRIGHTNESS_TO_DUTY(brightness)                                     \
@@ -117,6 +117,8 @@ void lc_init() {
     ledc_set_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
                   LEDC_MIN_DUTY);
     ledc_update_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel);
+
+    lc_channel_helper[ch].brightness = LC_MIN_BRIGHTNESS;
   }
 }
 
@@ -167,8 +169,9 @@ void lc_off(lc_channel_e ch) {
 }
 
 void lc_set_brightness(lc_channel_e ch, uint8_t brightness) {
-  if (brightness > 100) {
-    brightness = 100;
+  if (brightness < LC_MIN_BRIGHTNESS || brightness > LC_MAX_BRIGHTNESS) {
+    ESP_LOGW(TAG, "Brightness out of range");
+    return;
   }
 
   if (ch > LC_CH_ALL) {
