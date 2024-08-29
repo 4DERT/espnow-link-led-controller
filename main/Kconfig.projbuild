@@ -75,4 +75,51 @@ config GPIO_JUMPER_C2_ACTIVE_STATE
 
 endmenu # End of Jumper Configuration
 
+menu "LEDC Configuration"
+
+    config LEDC_CH_0_GPIO
+        int "LEDC Channel 0 GPIO"
+        range 0 40
+        default 39
+        help
+            GPIO pin number for LEDC Channel 0.
+
+    config LEDC_CH_1_GPIO
+        int "LEDC Channel 1 GPIO"
+        range 0 40
+        default 37
+        help
+            GPIO pin number for LEDC Channel 1.
+
+    config LEDC_CH_2_GPIO
+        int "LEDC Channel 2 GPIO"
+        range 0 40
+        default 35
+        help
+            GPIO pin number for LEDC Channel 2.
+
+    config LEDC_CH_3_GPIO
+        int "LEDC Channel 3 GPIO"
+        range 0 40
+        default 33
+        help
+            GPIO pin number for LEDC Channel 3.
+
+    config LEDC_FREQ
+        int "LEDC Frequency (Hz)"
+        range 10 4000
+        default 4000
+        help
+            Frequency for the LEDC timer in Hertz.
+    
+    config LEDC_FADE_TIME_MS
+        int "LEDC Fade time in ms"
+        range 1 4000
+        default 500
+        help
+            Fade time for LEDC in milliseconds.
+
+endmenu
+
+
 endmenu # End of Pin Configuration

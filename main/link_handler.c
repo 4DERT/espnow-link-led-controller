@@ -6,6 +6,7 @@
 
 #include "esp_log.h"
 
+#include "led_controller.h"
 #include "link.h"
 
 static const char *TAG = "link_handler";
@@ -74,9 +75,11 @@ void on_link_command_all_channels(const char *cmd) {
   ESP_LOGI(TAG, "Received command: %s", cmd);
 
   if (strcmp(cmd, "ON") == 0) {
+    lc_on(LC_CH_ALL);
   }
 
   else if (strcmp(cmd, "OFF") == 0) {
+    lc_off(LC_CH_ALL);
   }
 
   else if (strncmp(cmd, "SET_BRIGHTNESS=", 15) == 0) {
@@ -84,6 +87,7 @@ void on_link_command_all_channels(const char *cmd) {
     int value = atoi(value_str);
 
     if (value > 0 && value <= 100) {
+      lc_set_brightness(LC_CH_ALL, value);
     }
   }
 
@@ -97,9 +101,15 @@ void on_link_command_individual_channels(const char *cmd) {
   ESP_LOGI(TAG, "Received command: %s", cmd);
 
   if (strncmp(cmd, "ON=", 3) == 0) {
+    const char *value_str = cmd + 3;
+    int value = atoi(value_str);
+    lc_on(value);
   }
 
   else if (strncmp(cmd, "OFF=", 4) == 0) {
+    const char *value_str = cmd + 4;
+    int value = atoi(value_str);
+    lc_on(value);
   }
 
   else if (strncmp(cmd, "SET_BRIGHTNESS=", 15) == 0) {
@@ -108,7 +118,7 @@ void on_link_command_individual_channels(const char *cmd) {
 
     if (sscanf(value_str, "%d,%d", &channel, &brightness) == 2) {
       if (channel >= 0 && channel <= 3 && brightness > 0 && brightness <= 100) {
-
+        lc_set_brightness(channel, brightness);
       } else {
         ESP_LOGW(TAG, "Invalid channel or brightness value.");
       }

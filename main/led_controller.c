@@ -1,0 +1,191 @@
+#include "led_controller.h"
+
+#include "driver/ledc.h"
+#include "esp_err.h"
+#include "esp_log.h"
+
+#define LEDC_LS_TIMER LEDC_TIMER_1
+#define LEDC_LS_MODE LEDC_LOW_SPEED_MODE
+#define LEDC_LS_FREQ CONFIG_LEDC_FREQ
+#define LEDC_LS_CH0_GPIO CONFIG_LEDC_CH_0_GPIO
+#define LEDC_LS_CH0_CHANNEL LEDC_CHANNEL_0
+#define LEDC_LS_CH1_GPIO CONFIG_LEDC_CH_1_GPIO
+#define LEDC_LS_CH1_CHANNEL LEDC_CHANNEL_1
+#define LEDC_LS_CH2_GPIO CONFIG_LEDC_CH_2_GPIO
+#define LEDC_LS_CH2_CHANNEL LEDC_CHANNEL_2
+#define LEDC_LS_CH3_GPIO CONFIG_LEDC_CH_3_GPIO
+#define LEDC_LS_CH3_CHANNEL LEDC_CHANNEL_3
+
+#define LEDC_CH_NUM (4)
+#define LEDC_DUTY_RESOLUTION LEDC_TIMER_13_BIT
+#define LEDC_MIN_DUTY 0
+#define LEDC_MAX_DUTY (1 << LEDC_TIMER_13_BIT)
+#define LEDC_FADE_TIME CONFIG_LEDC_FADE_TIME_MS
+
+#define MAP_BRIGHTNESS_TO_DUTY(brightness)                                     \
+  ((brightness) * ((1 << LEDC_DUTY_RESOLUTION) - 1) / 100)
+
+static const char *TAG = "LED_controller";
+
+typedef struct {
+  bool is_on;
+  uint8_t brightness;
+  uint32_t duty;
+} lc_channel_t;
+
+lc_channel_t lc_channel_helper[LEDC_CH_NUM];
+
+/*
+ * Prepare and set configuration of timers
+ * that will be used by LED Controller
+ */
+ledc_timer_config_t ledc_timer = {
+    .duty_resolution = LEDC_TIMER_13_BIT, // resolution of PWM duty
+    .freq_hz = LEDC_LS_FREQ,              // frequency of PWM signal
+    .speed_mode = LEDC_LS_MODE,           // timer mode
+    .timer_num = LEDC_LS_TIMER,           // timer index
+    .clk_cfg = LEDC_AUTO_CLK,             // Auto select the source clock
+};
+
+/*
+ * Prepare individual configuration
+ * for each channel of LED Controller
+ * by selecting:
+ * - controller's channel number
+ * - output duty cycle, set initially to 0
+ * - GPIO number where LED is connected to
+ * - speed mode, either high or low
+ * - timer servicing selected channel
+ *   Note: if different channels use one timer,
+ *         then frequency and bit_num of these channels
+ *         will be the same
+ */
+ledc_channel_config_t ledc_channel[LEDC_CH_NUM] = {
+    {.channel = LEDC_LS_CH0_CHANNEL,
+     .duty = 0,
+     .gpio_num = LEDC_LS_CH0_GPIO,
+     .speed_mode = LEDC_LS_MODE,
+     .hpoint = 0,
+     .timer_sel = LEDC_LS_TIMER,
+     .flags.output_invert = 0},
+    {.channel = LEDC_LS_CH1_CHANNEL,
+     .duty = 0,
+     .gpio_num = LEDC_LS_CH1_GPIO,
+     .speed_mode = LEDC_LS_MODE,
+     .hpoint = 0,
+     .timer_sel = LEDC_LS_TIMER,
+     .flags.output_invert = 0},
+    {.channel = LEDC_LS_CH2_CHANNEL,
+     .duty = 0,
+     .gpio_num = LEDC_LS_CH2_GPIO,
+     .speed_mode = LEDC_LS_MODE,
+     .hpoint = 0,
+     .timer_sel = LEDC_LS_TIMER,
+     .flags.output_invert = 0},
+    {.channel = LEDC_LS_CH3_CHANNEL,
+     .duty = 0,
+     .gpio_num = LEDC_LS_CH3_GPIO,
+     .speed_mode = LEDC_LS_MODE,
+     .hpoint = 0,
+     .timer_sel = LEDC_LS_TIMER,
+     .flags.output_invert = 0},
+};
+
+// Public
+
+void lc_init() {
+  int ch;
+
+  // Set configuration of timer0 for high speed channels
+  ledc_timer_config(&ledc_timer);
+
+  // Set LED Controller with previously prepared configuration
+  for (ch = 0; ch < LEDC_CH_NUM; ch++) {
+    ledc_channel_config(&ledc_channel[ch]);
+  }
+
+  // Initialize fade service.
+  ledc_fade_func_install(0);
+
+  for (ch = 0; ch < LEDC_CH_NUM; ch++) {
+    ledc_cb_register(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
+                     NULL, NULL);
+  }
+
+  // disable all leds
+  for (ch = 0; ch < LEDC_CH_NUM; ch++) {
+    ledc_set_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
+                  LEDC_MIN_DUTY);
+    ledc_update_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel);
+  }
+}
+
+void lc_on(lc_channel_e ch) {
+  if (ch > LC_CH_ALL) {
+    ESP_LOGW(TAG, "channel out of range");
+    return;
+  }
+
+  if (ch == LC_CH_ALL) {
+    for (int i = 0; i < LEDC_CH_NUM; i++) {
+      lc_on(i);
+    }
+    return;
+  }
+
+  ESP_LOGI(TAG, "Turning on channel %d\n", ch);
+
+  ledc_set_fade_with_time(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
+                          lc_channel_helper[ch].duty, LEDC_FADE_TIME);
+  ledc_fade_start(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
+                  LEDC_FADE_NO_WAIT);
+
+  lc_channel_helper[ch].is_on = true;
+}
+
+void lc_off(lc_channel_e ch) {
+  if (ch > LC_CH_ALL) {
+    ESP_LOGW(TAG, "channel out of range");
+    return;
+  }
+
+  if (ch == LC_CH_ALL) {
+    for (int i = 0; i < LEDC_CH_NUM; i++) {
+      lc_off(i);
+    }
+    return;
+  }
+
+  ESP_LOGI(TAG, "Turning off channel %d\n", ch);
+
+  ledc_set_fade_with_time(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
+                          LEDC_MIN_DUTY, LEDC_FADE_TIME);
+  ledc_fade_start(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
+                  LEDC_FADE_NO_WAIT);
+
+  lc_channel_helper[ch].is_on = false;
+}
+
+void lc_set_brightness(lc_channel_e ch, uint8_t brightness) {
+  if (brightness > 100) {
+    brightness = 100;
+  }
+
+  if (ch > LC_CH_ALL) {
+    ESP_LOGW(TAG, "channel out of range");
+    return;
+  }
+
+  if (ch == LC_CH_ALL) {
+    for (int i = 0; i < LEDC_CH_NUM; i++) {
+      lc_set_brightness(i, brightness);
+    }
+    return;
+  }
+
+  lc_channel_helper[ch].duty = MAP_BRIGHTNESS_TO_DUTY(brightness);
+  lc_channel_helper[ch].brightness = brightness;
+
+  ESP_LOGI(TAG, "Setting brightness of channel %d to %d%% (%lu)\n", ch,
+           brightness, lc_channel_helper[ch].duty);
+}
