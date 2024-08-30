@@ -25,6 +25,10 @@
 #define MAP_BRIGHTNESS_TO_DUTY(brightness)                                     \
   ((brightness) * ((1 << LEDC_DUTY_RESOLUTION) - 1) / 100)
 
+#define MAP_COLOR_AND_BRIGHTNESS_TO_DUTY(color, brightness)                    \
+  ((uint32_t)(((color) * (brightness) * LC_MAX_DUTY) /                         \
+              (LC_MAX_RGBW * LC_MAX_BRIGHTNESS)))
+
 static const char *TAG = "LED_controller";
 
 lc_channel_t lc_channel_helper[LEDC_CH_NUM];
@@ -129,7 +133,7 @@ void lc_on(lc_channel_e ch) {
     return;
   }
 
-  ESP_LOGI(TAG, "Turning on channel %d\n", ch);
+  ESP_LOGI(TAG, "Turning on channel %d", ch);
 
   ledc_set_fade_with_time(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
                           lc_channel_helper[ch].duty, LEDC_FADE_TIME);
@@ -152,7 +156,7 @@ void lc_off(lc_channel_e ch) {
     return;
   }
 
-  ESP_LOGI(TAG, "Turning off channel %d\n", ch);
+  ESP_LOGI(TAG, "Turning off channel %d", ch);
 
   ledc_set_fade_with_time(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
                           LEDC_MIN_DUTY, LEDC_FADE_TIME);
@@ -183,8 +187,49 @@ void lc_set_brightness(lc_channel_e ch, uint8_t brightness) {
   lc_channel_helper[ch].duty = MAP_BRIGHTNESS_TO_DUTY(brightness);
   lc_channel_helper[ch].brightness = brightness;
 
-  ESP_LOGI(TAG, "Setting brightness of channel %d to %d%% (%lu)\n", ch,
+  ESP_LOGI(TAG, "Setting brightness of channel %d to %d%% (%lu)", ch,
            brightness, lc_channel_helper[ch].duty);
 }
 
 const lc_channel_t *lc_get_status() { return lc_channel_helper; }
+
+void lc_set_rgbw(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
+  lc_channel_helper[LC_CH_R].color_value = r;
+  lc_channel_helper[LC_CH_R].duty = MAP_COLOR_AND_BRIGHTNESS_TO_DUTY(
+      r, lc_channel_helper[LC_CH_R].brightness);
+  ESP_LOGI(TAG, "Setting duty of channel %d to %lu", LC_CH_R,
+             lc_channel_helper[LC_CH_R].duty);
+
+  lc_channel_helper[LC_CH_G].color_value = g;
+  lc_channel_helper[LC_CH_G].duty = MAP_COLOR_AND_BRIGHTNESS_TO_DUTY(
+      g, lc_channel_helper[LC_CH_G].brightness);
+  ESP_LOGI(TAG, "Setting duty of channel %d to %lu", LC_CH_G,
+             lc_channel_helper[LC_CH_G].duty);
+
+  lc_channel_helper[LC_CH_B].color_value = b;
+  lc_channel_helper[LC_CH_B].duty = MAP_COLOR_AND_BRIGHTNESS_TO_DUTY(
+      b, lc_channel_helper[LC_CH_B].brightness);
+  ESP_LOGI(TAG, "Setting duty of channel %d to %lu", LC_CH_B,
+             lc_channel_helper[LC_CH_B].duty);
+
+  lc_channel_helper[LC_CH_W].color_value = w;
+  lc_channel_helper[LC_CH_W].duty = MAP_COLOR_AND_BRIGHTNESS_TO_DUTY(
+      w, lc_channel_helper[LC_CH_W].brightness);
+  ESP_LOGI(TAG, "Setting duty of channel %d to %lu", LC_CH_W,
+             lc_channel_helper[LC_CH_W].duty);
+}
+
+void lc_set_rgbw_brightness(uint8_t brightness) {
+  if (brightness < LC_MIN_BRIGHTNESS || brightness > LC_MAX_BRIGHTNESS) {
+    ESP_LOGW(TAG, "Brightness out of range");
+    return;
+  }
+
+  for (int ch = 0; ch < LC_CH_ALL; ch++) {
+    lc_channel_helper[ch].brightness = brightness;
+    lc_channel_helper[ch].duty = MAP_COLOR_AND_BRIGHTNESS_TO_DUTY(
+        lc_channel_helper[ch].color_value, brightness);
+    ESP_LOGI(TAG, "Setting duty of channel %d to %lu", ch,
+             lc_channel_helper[ch].duty);
+  }
+}

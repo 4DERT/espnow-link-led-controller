@@ -39,8 +39,9 @@ link_config_t link_config_individual_channels = {
 
 link_config_t link_config_rgb = {
     .type = 5,
-    .commands = {"ON", "OFF", "SET_BRIGHTNESS=*", "GET_STATUS", "SET_RGB=*"},
-    .status_fmt = "{\"state\":\"%s\",\"rgb\":[%u,%u,%u], \"brightness\": %u}",
+    .commands = {"ON", "OFF", "SET_BRIGHTNESS=*", "GET_STATUS", "SET_RGBW=*"},
+    .status_fmt =
+        "{\"state\":\"%s\",\"rgbw\":[%u,%u,%u,%u], \"brightness\": %u}",
     .user_command_parser_cb = on_link_command_rgb_channels,
     .user_status_msg_cb = on_link_status_message_create_rgb,
 };
@@ -131,29 +132,27 @@ void on_link_command_rgb_channels(const char *cmd) {
   ESP_LOGI(TAG, "Received command: %s", cmd);
 
   if (strcmp(cmd, "ON") == 0) {
+    lc_on(LC_CH_ALL);
   }
 
   else if (strcmp(cmd, "OFF") == 0) {
+    lc_off(LC_CH_ALL);
   }
 
   else if (strncmp(cmd, "SET_BRIGHTNESS=", 15) == 0) {
     const char *value_str = cmd + 15;
     int value = atoi(value_str);
-
-    if (value > 0 && value <= 100) {
-    }
+    lc_set_rgbw_brightness(value);
+    // lc_on(LC_CH_ALL);
   }
 
-  else if (strncmp(cmd, "SET_RGB=", 8) == 0) {
-    int r, g, b;
-    const char *value_str = cmd + 8;
+  else if (strncmp(cmd, "SET_RGBW=", 8) == 0) {
+    uint8_t r, g, b, w;
+    const char *value_str = cmd + 9;
 
-    if (sscanf(value_str, "%d,%d,%d", &r, &g, &b) == 3) {
-      if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255) {
-
-      } else {
-        ESP_LOGW(TAG, "Invalid RGB value.");
-      }
+    if (sscanf(value_str, "%hhu,%hhu,%hhu,%hhu", &r, &g, &b, &w) == 4) {
+      lc_set_rgbw(r, g, b, w);
+      // lc_on(LC_CH_ALL);
     } else {
       ESP_LOGW(TAG, "Invalid command format.");
     }
@@ -190,6 +189,12 @@ char *on_link_status_message_create_individual_channels(void) {
 }
 
 char *on_link_status_message_create_rgb(void) {
-  char *msg = strdup("OK");
-  return msg;
+  const lc_channel_t *lc_channel_arr = lc_get_status();
+
+  char *status = link_generate_status_message(
+      NULL, lc_channel_arr[LC_CH_R].is_on ? "ON" : "OFF",
+      lc_channel_arr[LC_CH_R].color_value, lc_channel_arr[LC_CH_G].color_value,
+      lc_channel_arr[LC_CH_B].color_value, lc_channel_arr[LC_CH_W].color_value,
+      lc_channel_arr[LC_CH_R].brightness);
+  return status;
 }
