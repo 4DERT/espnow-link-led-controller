@@ -198,3 +198,7 @@ char *on_link_status_message_create_rgb(void) {
       lc_channel_arr[LC_CH_R].brightness);
   return status;
 }
+
+void lh_send_status() {
+  link_send_status_msg();
+}

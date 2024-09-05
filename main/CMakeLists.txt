@@ -1,2 +1,10 @@
-idf_component_register(SRCS "main.c" "mode.c" "link_handler.c" "nvs_manager.c" "led_controller.c" "encoder.c" "button.c"
-                             INCLUDE_DIRS ".")
+idf_component_register(SRCS "main.c"
+                            "mode.c"
+                            "link_handler.c"
+                            "nvs_manager.c"
+                            "led_controller.c"
+                            "encoder.c"
+                            "button.c"
+                            "encoder_ac_mode.c"
+                            "encoder_ic_mode.c"
+                            "encoder_rgbw_mode.c" INCLUDE_DIRS ".")

@@ -2,6 +2,9 @@
 
 #include "driver/gpio.h"
 #include "driver/pulse_cnt.h"
+#include "encoder_ac_mode.h"
+#include "encoder_ic_mode.h"
+#include "encoder_rgbw_mode.h"
 #include "esp_log.h"
 #include "esp_sleep.h"
 #include "freertos/FreeRTOS.h"
@@ -34,12 +37,64 @@ button_config_t button_cfg = {
 };
 
 // encoder events
-static void on_encoder_ccw() { ESP_LOGI(TAG, "<"); }
+static void on_encoder_ccw() {
+  ESP_LOGI(TAG, "<");
+  switch(led_mode) {
+  case MODE_ALL_CHANNELS:
+    encoder_ac_on_ccw();
+    break;
 
-static void on_encoder_cw() { ESP_LOGI(TAG, ">"); }
+  case MODE_INDIVIDUAL_CHANNELS:
+    encoder_ic_on_ccw();
+    break;
+
+  case MODE_RGB:
+    encoder_rgbw_on_ccw();
+    break;
+
+  default:
+    break;
+  }
+}
+
+static void on_encoder_cw() {
+  ESP_LOGI(TAG, ">");
+  switch(led_mode) {
+  case MODE_ALL_CHANNELS:
+    encoder_ac_on_cw();
+    break;
+
+  case MODE_INDIVIDUAL_CHANNELS:
+    encoder_ic_on_cw();
+    break;
+
+  case MODE_RGB:
+    encoder_rgbw_on_cw();
+    break;
+
+  default:
+    break;
+  }
+}
 
 static void on_encoder_button_single_click(void *arg, void *usr_data) {
-  ESP_LOGI(TAG, "CLICK");
+  ESP_LOGI(TAG, "click");
+  switch (led_mode) {
+  case MODE_ALL_CHANNELS:
+    encoder_ac_on_click();
+    break;
+
+  case MODE_INDIVIDUAL_CHANNELS:
+    encoder_ic_on_click();
+    break;
+
+  case MODE_RGB:
+    encoder_rgbw_on_click();
+    break;
+
+  default:
+    break;
+  }
 }
 
 // encoder task

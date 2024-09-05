@@ -1,0 +1,8 @@
+#ifndef ENCODER_IC_MODE_H_
+#define ENCODER_IC_MODE_H_
+
+void encoder_ic_on_click();
+void encoder_ic_on_ccw();
+void encoder_ic_on_cw();
+
+#endif //ENCODER_IC_MODE_H_
