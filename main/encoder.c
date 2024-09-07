@@ -7,11 +7,13 @@
 #include "encoder_rgbw_mode.h"
 #include "esp_log.h"
 #include "esp_sleep.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include "iot_button.h"
 #include "led_controller.h"
+#include "link_handler.h"
 #include "mode.h"
 
 #define ENCODER_WATCH_POINT_QUEUE_SIZE 10
@@ -36,10 +38,14 @@ button_config_t button_cfg = {
         },
 };
 
+// sending status
+static int64_t last_interaction_time = 0;
+SemaphoreHandle_t interaction_time_mutex;
+
 // encoder events
 static void on_encoder_ccw() {
   ESP_LOGI(TAG, "<");
-  switch(led_mode) {
+  switch (led_mode) {
   case MODE_ALL_CHANNELS:
     encoder_ac_on_ccw();
     break;
@@ -55,11 +61,15 @@ static void on_encoder_ccw() {
   default:
     break;
   }
+
+  xSemaphoreTake(interaction_time_mutex, portMAX_DELAY);
+  last_interaction_time = esp_timer_get_time();
+  xSemaphoreGive(interaction_time_mutex);
 }
 
 static void on_encoder_cw() {
   ESP_LOGI(TAG, ">");
-  switch(led_mode) {
+  switch (led_mode) {
   case MODE_ALL_CHANNELS:
     encoder_ac_on_cw();
     break;
@@ -75,12 +85,18 @@ static void on_encoder_cw() {
   default:
     break;
   }
+
+  xSemaphoreTake(interaction_time_mutex, portMAX_DELAY);
+  last_interaction_time = esp_timer_get_time();
+  xSemaphoreGive(interaction_time_mutex);
 }
 
 static void on_encoder_button_single_click(void *arg, void *usr_data) {
   ESP_LOGI(TAG, "click");
+
   switch (led_mode) {
   case MODE_ALL_CHANNELS:
+    ESP_LOGI(TAG, "dupa");
     encoder_ac_on_click();
     break;
 
@@ -95,21 +111,41 @@ static void on_encoder_button_single_click(void *arg, void *usr_data) {
   default:
     break;
   }
+
+  xSemaphoreTake(interaction_time_mutex, portMAX_DELAY);
+  last_interaction_time = esp_timer_get_time();
+  xSemaphoreGive(interaction_time_mutex);
 }
 
 // encoder task
 
 void encoder_task(void *params) {
   int event_count = 0;
-  while (1) {
-    xQueueReceive(watch_point_queue, &event_count, portMAX_DELAY);
+  BaseType_t ret;
+  int64_t current_time;
+  int64_t prev_interaction_time = 0;
 
-    if (event_count < 0) {
-      // LEFT (ccw)
-      on_encoder_ccw();
+  while (1) {
+    ret = xQueueReceive(watch_point_queue, &event_count, pdMS_TO_TICKS(100));
+
+    if (ret == pdTRUE) {
+      if (event_count < 0) {
+        // LEFT (ccw)
+        on_encoder_ccw();
+      } else {
+        // RIGHT (cw)
+        on_encoder_cw();
+      }
     } else {
-      // RIGHT (cw)
-      on_encoder_cw();
+      xSemaphoreTake(interaction_time_mutex, portMAX_DELAY);
+      current_time = esp_timer_get_time();
+      const int64_t diff = current_time - last_interaction_time;
+
+      if (diff >= 300000 && prev_interaction_time != last_interaction_time) {
+        lh_send_status();
+        prev_interaction_time = last_interaction_time;
+      }
+      xSemaphoreGive(interaction_time_mutex);
     }
   }
 }
@@ -187,6 +223,8 @@ void encoder_init(mode_e mode) {
   pcnt_unit_enable(pcnt_unit);
   pcnt_unit_clear_count(pcnt_unit);
   pcnt_unit_start(pcnt_unit);
+
+  interaction_time_mutex = xSemaphoreCreateMutex();
 
   xTaskCreate(encoder_task, "encoder_task", 4096, NULL, 1, NULL);
 }
