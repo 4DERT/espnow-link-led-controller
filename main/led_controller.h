@@ -31,8 +31,8 @@ typedef struct {
 
 void lc_init();
 const lc_channel_t *lc_get_status();
-void lc_on(lc_channel_e ch);
-void lc_off(lc_channel_e ch);
+void lc_on(lc_channel_e ch, bool fade);
+void lc_off(lc_channel_e ch, bool fade);
 void lc_set_brightness(lc_channel_e ch, uint8_t brightness);
 void lc_set_rgbw(uint8_t r, uint8_t g, uint8_t b, uint8_t w);
 void lc_set_rgbw_brightness(uint8_t brightness);

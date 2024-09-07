@@ -75,18 +75,18 @@ void on_link_command_all_channels(const char *cmd) {
   ESP_LOGI(TAG, "Received command: %s", cmd);
 
   if (strcmp(cmd, "ON") == 0) {
-    lc_on(LC_CH_ALL);
+    lc_on(LC_CH_ALL, true);
   }
 
   else if (strcmp(cmd, "OFF") == 0) {
-    lc_off(LC_CH_ALL);
+    lc_off(LC_CH_ALL,true);
   }
 
   else if (strncmp(cmd, "SET_BRIGHTNESS=", 15) == 0) {
     const char *value_str = cmd + 15;
     int value = atoi(value_str);
     lc_set_brightness(LC_CH_ALL, value);
-    lc_on(LC_CH_ALL);
+    lc_on(LC_CH_ALL,true );
   }
 
   else if (strcmp(cmd, "GET_STATUS") == 0) {
@@ -101,13 +101,13 @@ void on_link_command_individual_channels(const char *cmd) {
   if (strncmp(cmd, "ON=", 3) == 0) {
     const char *value_str = cmd + 3;
     int value = atoi(value_str);
-    lc_on(value);
+    lc_on(value, true);
   }
 
   else if (strncmp(cmd, "OFF=", 4) == 0) {
     const char *value_str = cmd + 4;
     int value = atoi(value_str);
-    lc_off(value);
+    lc_off(value, true);
   }
 
   else if (strncmp(cmd, "SET_BRIGHTNESS=", 15) == 0) {
@@ -116,7 +116,7 @@ void on_link_command_individual_channels(const char *cmd) {
 
     if (sscanf(value_str, "%d,%d", &channel, &brightness) == 2) {
       lc_set_brightness(channel, brightness);
-      lc_on(channel);
+      lc_on(channel,true );
     } else {
       ESP_LOGW(TAG, "Invalid command format.");
     }
@@ -132,11 +132,11 @@ void on_link_command_rgb_channels(const char *cmd) {
   ESP_LOGI(TAG, "Received command: %s", cmd);
 
   if (strcmp(cmd, "ON") == 0) {
-    lc_on(LC_CH_ALL);
+    lc_on(LC_CH_ALL, true);
   }
 
   else if (strcmp(cmd, "OFF") == 0) {
-    lc_off(LC_CH_ALL);
+    lc_off(LC_CH_ALL, true);
   }
 
   else if (strncmp(cmd, "SET_BRIGHTNESS=", 15) == 0) {

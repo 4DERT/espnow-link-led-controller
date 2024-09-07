@@ -120,7 +120,7 @@ void lc_init() {
   }
 }
 
-void lc_on(lc_channel_e ch) {
+void lc_on(lc_channel_e ch, bool fade) {
   if (ch > LC_CH_ALL) {
     ESP_LOGW(TAG, "channel out of range");
     return;
@@ -128,22 +128,29 @@ void lc_on(lc_channel_e ch) {
 
   if (ch == LC_CH_ALL) {
     for (int i = 0; i < LEDC_CH_NUM; i++) {
-      lc_on(i);
+      lc_on(i, fade);
     }
     return;
   }
 
   ESP_LOGI(TAG, "Turning on channel %d", ch);
 
-  ledc_set_fade_with_time(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
-                          lc_channel_helper[ch].duty, LEDC_FADE_TIME);
-  ledc_fade_start(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
-                  LEDC_FADE_NO_WAIT);
+  if (fade) {
+    ledc_set_fade_with_time(ledc_channel[ch].speed_mode,
+                            ledc_channel[ch].channel,
+                            lc_channel_helper[ch].duty, LEDC_FADE_TIME);
+    ledc_fade_start(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
+                    LEDC_FADE_NO_WAIT);
+  } else {
+    ledc_set_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
+                  lc_channel_helper[ch].duty);
+    ledc_update_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel);
+  }
 
   lc_channel_helper[ch].is_on = true;
 }
 
-void lc_off(lc_channel_e ch) {
+void lc_off(lc_channel_e ch, bool fade) {
   if (ch > LC_CH_ALL) {
     ESP_LOGW(TAG, "channel out of range");
     return;
@@ -151,17 +158,24 @@ void lc_off(lc_channel_e ch) {
 
   if (ch == LC_CH_ALL) {
     for (int i = 0; i < LEDC_CH_NUM; i++) {
-      lc_off(i);
+      lc_off(i, fade);
     }
     return;
   }
 
   ESP_LOGI(TAG, "Turning off channel %d", ch);
 
-  ledc_set_fade_with_time(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
-                          LEDC_MIN_DUTY, LEDC_FADE_TIME);
-  ledc_fade_start(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
-                  LEDC_FADE_NO_WAIT);
+  if (fade) {
+    ledc_set_fade_with_time(ledc_channel[ch].speed_mode,
+                            ledc_channel[ch].channel, LEDC_MIN_DUTY,
+                            LEDC_FADE_TIME);
+    ledc_fade_start(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
+                    LEDC_FADE_NO_WAIT);
+  } else {
+    ledc_set_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
+                  LEDC_MIN_DUTY);
+    ledc_update_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel);
+  }
 
   lc_channel_helper[ch].is_on = false;
 }
@@ -198,25 +212,25 @@ void lc_set_rgbw(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
   lc_channel_helper[LC_CH_R].duty = MAP_COLOR_AND_BRIGHTNESS_TO_DUTY(
       r, lc_channel_helper[LC_CH_R].brightness);
   ESP_LOGI(TAG, "Setting duty of channel %d to %lu", LC_CH_R,
-             lc_channel_helper[LC_CH_R].duty);
+           lc_channel_helper[LC_CH_R].duty);
 
   lc_channel_helper[LC_CH_G].color_value = g;
   lc_channel_helper[LC_CH_G].duty = MAP_COLOR_AND_BRIGHTNESS_TO_DUTY(
       g, lc_channel_helper[LC_CH_G].brightness);
   ESP_LOGI(TAG, "Setting duty of channel %d to %lu", LC_CH_G,
-             lc_channel_helper[LC_CH_G].duty);
+           lc_channel_helper[LC_CH_G].duty);
 
   lc_channel_helper[LC_CH_B].color_value = b;
   lc_channel_helper[LC_CH_B].duty = MAP_COLOR_AND_BRIGHTNESS_TO_DUTY(
       b, lc_channel_helper[LC_CH_B].brightness);
   ESP_LOGI(TAG, "Setting duty of channel %d to %lu", LC_CH_B,
-             lc_channel_helper[LC_CH_B].duty);
+           lc_channel_helper[LC_CH_B].duty);
 
   lc_channel_helper[LC_CH_W].color_value = w;
   lc_channel_helper[LC_CH_W].duty = MAP_COLOR_AND_BRIGHTNESS_TO_DUTY(
       w, lc_channel_helper[LC_CH_W].brightness);
   ESP_LOGI(TAG, "Setting duty of channel %d to %lu", LC_CH_W,
-             lc_channel_helper[LC_CH_W].duty);
+           lc_channel_helper[LC_CH_W].duty);
 }
 
 void lc_set_rgbw_brightness(uint8_t brightness) {
