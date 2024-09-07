@@ -1,5 +1,9 @@
 #include "led_controller.h"
 
+#include <stdbool.h>
+
+#include "freertos/FreeRTOS.h"
+
 #include "driver/ledc.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -89,6 +93,16 @@ ledc_channel_config_t ledc_channel[LEDC_CH_NUM] = {
      .flags.output_invert = 0},
 };
 
+/*
+ * This callback function will be called when fade operation has ended
+ * Use callback only if you are aware it is being called inside an ISR
+ * Otherwise, you can use a semaphore to unblock tasks
+ */
+static IRAM_ATTR bool on_ledc_fade_end_event(const ledc_cb_param_t *param,
+                                             void *user_arg) {
+  return true;
+}
+
 // Public
 
 void lc_init() {
@@ -105,9 +119,11 @@ void lc_init() {
   // Initialize fade service.
   ledc_fade_func_install(0);
 
+  ledc_cbs_t callbacks = {.fade_cb = on_ledc_fade_end_event};
+
   for (ch = 0; ch < LEDC_CH_NUM; ch++) {
     ledc_cb_register(ledc_channel[ch].speed_mode, ledc_channel[ch].channel,
-                     NULL, NULL);
+                     &callbacks, NULL);
   }
 
   // disable all leds
@@ -116,7 +132,8 @@ void lc_init() {
                   LEDC_MIN_DUTY);
     ledc_update_duty(ledc_channel[ch].speed_mode, ledc_channel[ch].channel);
 
-    lc_channel_helper[ch].brightness = LC_MIN_BRIGHTNESS;
+    // lc_channel_helper[ch].brightness = LC_MIN_BRIGHTNESS;
+    lc_set_brightness(4, LC_MAX_BRIGHTNESS / 4);
   }
 }
 
