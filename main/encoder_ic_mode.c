@@ -48,3 +48,11 @@ void encoder_ic_on_cw() {
     }
   }
 }
+
+void encoder_ic_on_double_click() {
+
+}
+
+void encoder_ic_on_long_press() {
+  
+}

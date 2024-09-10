@@ -117,6 +117,58 @@ static void on_encoder_button_single_click(void *arg, void *usr_data) {
   xSemaphoreGive(interaction_time_mutex);
 }
 
+static void on_encoder_button_double_click(void *arg, void *usr_data) {
+  ESP_LOGI(TAG, "click");
+
+  switch (led_mode) {
+  case MODE_ALL_CHANNELS:
+    ESP_LOGI(TAG, "dupa");
+    // encoder_ac_on_click();
+    break;
+
+  case MODE_INDIVIDUAL_CHANNELS:
+    encoder_ic_on_double_click();
+    break;
+
+  case MODE_RGB:
+    // encoder_rgbw_on_click();
+    break;
+
+  default:
+    break;
+  }
+
+  xSemaphoreTake(interaction_time_mutex, portMAX_DELAY);
+  last_interaction_time = esp_timer_get_time();
+  xSemaphoreGive(interaction_time_mutex);
+}
+
+static void on_encoder_button_long_press(void *arg, void *usr_data) {
+  ESP_LOGI(TAG, "click");
+
+  switch (led_mode) {
+  case MODE_ALL_CHANNELS:
+    ESP_LOGI(TAG, "dupa");
+    // encoder_ac_on_click();
+    break;
+
+  case MODE_INDIVIDUAL_CHANNELS:
+    encoder_ic_on_long_press();
+    break;
+
+  case MODE_RGB:
+    // encoder_rgbw_on_click();
+    break;
+
+  default:
+    break;
+  }
+
+  xSemaphoreTake(interaction_time_mutex, portMAX_DELAY);
+  last_interaction_time = esp_timer_get_time();
+  xSemaphoreGive(interaction_time_mutex);
+}
+
 // encoder task
 
 void encoder_task(void *params) {
@@ -172,6 +224,10 @@ void encoder_init(mode_e mode) {
   }
   iot_button_register_cb(button, BUTTON_SINGLE_CLICK,
                          on_encoder_button_single_click, NULL);
+  iot_button_register_cb(button, BUTTON_DOUBLE_CLICK,
+                         on_encoder_button_double_click, NULL);
+  iot_button_register_cb(button, BUTTON_LONG_PRESS_START,
+                         on_encoder_button_long_press, NULL);
 
   ESP_LOGI(TAG, "install pcnt unit");
   pcnt_unit_config_t unit_config = {
