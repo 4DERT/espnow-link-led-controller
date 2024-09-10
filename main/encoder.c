@@ -96,7 +96,6 @@ static void on_encoder_button_single_click(void *arg, void *usr_data) {
 
   switch (led_mode) {
   case MODE_ALL_CHANNELS:
-    ESP_LOGI(TAG, "dupa");
     encoder_ac_on_click();
     break;
 
@@ -122,8 +121,7 @@ static void on_encoder_button_double_click(void *arg, void *usr_data) {
 
   switch (led_mode) {
   case MODE_ALL_CHANNELS:
-    ESP_LOGI(TAG, "dupa");
-    // encoder_ac_on_click();
+    encoder_ac_on_double_click();
     break;
 
   case MODE_INDIVIDUAL_CHANNELS:
@@ -131,7 +129,7 @@ static void on_encoder_button_double_click(void *arg, void *usr_data) {
     break;
 
   case MODE_RGB:
-    // encoder_rgbw_on_click();
+    encoder_rgbw_on_double_click();
     break;
 
   default:
@@ -148,8 +146,7 @@ static void on_encoder_button_long_press(void *arg, void *usr_data) {
 
   switch (led_mode) {
   case MODE_ALL_CHANNELS:
-    ESP_LOGI(TAG, "dupa");
-    // encoder_ac_on_click();
+    encoder_ac_on_long_press();
     break;
 
   case MODE_INDIVIDUAL_CHANNELS:
@@ -157,7 +154,7 @@ static void on_encoder_button_long_press(void *arg, void *usr_data) {
     break;
 
   case MODE_RGB:
-    // encoder_rgbw_on_click();
+    encoder_rgbw_on_long_press();
     break;
 
   default:
